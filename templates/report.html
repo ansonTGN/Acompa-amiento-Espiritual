@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% if lang == 'ca' %}Reflexió Pastoral{% else %}Reflexión Pastoral{% endif %}</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/phosphor-icons"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #fbf9f6; --paper: #ffffff;
+      --text: #2e2e2e; --accent: #8e7345; --border: #e6e2dc;
+    }
+    body { margin: 0; font-family: 'Lato', sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.8; }
+
+    .paper {
+      max-width: 800px; margin: 0 auto; background: var(--paper);
+      padding: 60px 70px; box-shadow: 0 5px 30px rgba(0,0,0,0.05);
+      border: 1px solid #efebe6; position: relative;
+    }
+
+    .paper::before {
+      content: "†"; display: block; text-align: center; color: var(--accent);
+      font-size: 2rem; font-weight: 300; margin-bottom: 30px; opacity: 0.7;
+    }
+
+    .date-line { text-align: right; font-family: 'Libre Baskerville', serif; font-style: italic; color: #999; font-size: 0.9rem; margin-bottom: 40px; }
+
+    article h2 {
+      font-family: 'Libre Baskerville', serif; color: var(--accent); font-size: 1.4rem;
+      border-bottom: 1px solid #f0ebe4; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px;
+    }
+    article p { margin-bottom: 20px; text-align: justify; font-size: 1.1rem; }
+
+    blockquote.bible-quote {
+      margin: 40px 20px; padding: 30px; background-color: #fdfcfb;
+      border-left: 4px solid var(--accent); font-family: 'Libre Baskerville', serif;
+      font-size: 1.15rem; color: #555; font-style: italic;
+    }
+    blockquote.bible-quote footer {
+      display: block; margin-top: 15px; text-align: right; font-size: 0.9rem;
+      font-style: normal; font-weight: 700; color: var(--accent);
+    }
+
+    .actions {
+      margin-top: 60px; padding-top: 20px; border-top: 1px dashed var(--border);
+      display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+      color: #666; border: 1px solid var(--border); background: #fafafa;
+      padding: 10px 18px; border-radius: 4px; font-size: 0.9rem;
+      transition: all 0.3s; cursor: pointer; font-family: 'Lato', sans-serif;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); background: #fff; }
+    
+    /* FIX PDF: Eliminar espacio superior excesivo en la captura */
+    .pdf-mode {
+      padding: 30px 50px !important; /* Reduce padding original */
+      margin: 0 !important;
+      box-shadow: none !important; border: none !important;
+    }
+    .pdf-mode::before { margin-bottom: 10px !important; margin-top: 0 !important; }
+    .pdf-mode .actions { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div id="pdf-capture" class="paper">
+    <div class="date-line" id="current-date"></div>
+
+    <div id="report-content">
+        {{ report | safe }}
+    </div>
+
+    <div class="actions" data-html2canvas-ignore="true">
+      <a href="/" class="btn"><i class="ph-arrow-u-up-left"></i> {% if lang == 'ca' %}Inici{% else %}Inicio{% endif %}</a>
+      
+      <button id="btn-listen" onclick="readReport()" class="btn">
+        <i class="ph-speaker-high"></i> {% if lang == 'ca' %}Escoltar{% else %}Escuchar{% endif %}
+      </button>
+      
+      <button onclick="downloadPDF()" class="btn"><i class="ph-file-pdf"></i> PDF</button>
+      <button onclick="downloadHTML()" class="btn"><i class="ph-file-html"></i> HTML</button>
+    </div>
+  </div>
+
+  <script>
+    const lang = "{{ lang }}";
+    
+    // Fecha
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').innerText = now.toLocaleDateString(
+        lang === 'ca' ? 'ca-ES' : 'es-ES', 
+        options
+    );
+
+    // DETECCIÓN DE AUDIO (Output)
+    if (!('speechSynthesis' in window)) {
+        document.getElementById('btn-listen').style.display = 'none';
+    }
+
+    // 1. TEXTO A VOZ
+    function readReport() {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const text = document.getElementById('report-content').innerText;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang === 'ca' ? 'ca-ES' : 'es-ES';
+        utterance.rate = 0.9; 
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // 2. EXPORTAR PDF MEJORADO
+    function downloadPDF() {
+        const element = document.getElementById('pdf-capture');
+        
+        // Añadir clase temporal para ajustar márgenes
+        element.classList.add('pdf-mode');
+
+        const opt = {
+            margin:       [10, 10, 10, 10], // Márgenes del documento PDF (mm)
+            filename:     lang === 'ca' ? 'Reflexio_Espiritual.pdf' : 'Reflexion_Espiritual.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { 
+                scale: 2, 
+                useCORS: true,
+                scrollY: 0 
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Restaurar estilo pantalla
+            element.classList.remove('pdf-mode');
+        });
+    }
+
+    // 3. EXPORTAR HTML
+    function downloadHTML() {
+        const clone = document.getElementById('pdf-capture').cloneNode(true);
+        const act = clone.querySelector('.actions');
+        if(act) act.remove();
+
+        const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+            .map(s => s.outerHTML).join('\n');
+
+        const htmlContent = `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+<meta charset="UTF-8">
+<title>Reflexión</title>
+${styles}
+<style>body{background:#fbf9f6;padding:40px}.paper{margin:0 auto;box-shadow:none}.actions{display:none}</style>
+</head>
+<body>${clone.outerHTML}</body></html>`;
+
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = lang === 'ca' ? 'Reflexio.html' : 'Reflexion.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+  </script>
+</body>
+</html>
+
+
+
+

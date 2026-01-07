@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompañamiento Espiritual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    <style>
+        :root {
+            --bg: #fbf9f6;
+            --card: #ffffff;
+            --text: #4a4a4a;
+            --accent: #8e7345;
+            --border: #e6e2dc;
+            --recording: #c0392b;
+        }
+
+        body, html { height: 100%; margin: 0; }
+        body {
+            background-color: var(--bg);
+            font-family: 'Lato', sans-serif;
+            color: var(--text);
+            background-image: radial-gradient(#e0ddd8 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* LANDING OVERLAY */
+        #landing {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(251, 249, 246, 0.98);
+            z-index: 3000;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        #landing h1 {
+            font-family: 'Libre Baskerville', serif;
+            color: var(--accent);
+            font-size: 2.5rem; margin-bottom: 10px;
+        }
+        #landing p {
+            max-width: 600px; line-height: 1.6; font-size: 1.1rem; margin-bottom: 40px;
+        }
+        .lang-btn {
+            background: transparent; border: 2px solid var(--accent);
+            color: var(--accent); padding: 15px 30px; font-size: 1.1rem;
+            margin: 10px; cursor: pointer; border-radius: 4px;
+            font-family: 'Libre Baskerville', serif; transition: all 0.3s;
+        }
+        .lang-btn:hover { background: var(--accent); color: white; }
+        .designer {
+            margin-top: 60px; font-size: 0.85rem; color: #999;
+            font-family: 'Libre Baskerville', serif; font-style: italic;
+        }
+
+        /* MAIN APP */
+        .container { max-width: 720px; margin: 40px auto; padding: 0 20px; display: none; /* Oculto hasta elegir idioma */ }
+
+        h1.app-title {
+            font-family: 'Libre Baskerville', serif;
+            color: var(--accent);
+            font-size: 2.2rem;
+            text-align: center; margin-bottom: 5px; font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center; font-family: 'Libre Baskerville', serif;
+            font-style: italic; font-size: 1rem; color: #8c8883; margin-bottom: 40px;
+        }
+
+        .form-card {
+            background: var(--card); padding: 40px; border-radius: 6px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.04); border: 1px solid var(--border);
+        }
+
+        label {
+            display: block; margin-top: 25px; color: var(--accent);
+            font-family: 'Libre Baskerville', serif; font-size: 1.15rem; margin-bottom: 8px;
+        }
+
+        .hint { font-size: 0.9rem; color: #999; margin-bottom: 15px; font-style: italic; }
+        .input-wrapper { position: relative; }
+
+        textarea {
+            width: 100%; background: #fafafa; border: 1px solid #d1ccc5;
+            color: #333; padding: 15px; padding-right: 50px;
+            border-radius: 4px; box-sizing: border-box;
+            font-family: 'Lato', sans-serif; font-size: 1.05rem;
+            line-height: 1.6; resize: vertical; transition: all 0.3s ease;
+        }
+        textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+        .mic-btn {
+            position: absolute; bottom: 15px; right: 15px;
+            background: none; border: none; color: #999;
+            cursor: pointer; font-size: 1.3rem; transition: color 0.2s; padding: 5px;
+        }
+        .mic-btn:hover { color: var(--accent); }
+        .mic-btn.recording { color: var(--recording); animation: pulse 1.5s infinite; }
+        .mic-btn.hidden { display: none; } /* Si no hay soporte */
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .file-upload { margin-top: 10px; font-size: 0.85rem; color: #888; }
+
+        button.submit-btn {
+            margin-top: 40px; width: 100%; padding: 18px;
+            background: var(--accent); color: white; border: none;
+            font-family: 'Libre Baskerville', serif; font-size: 1.1rem;
+            cursor: pointer; border-radius: 4px; transition: background 0.3s;
+        }
+        button.submit-btn:hover { background: #735d36; }
+
+        #loader {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(251, 249, 246, 0.95); z-index: 4000;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 3px solid #ddd;
+            border-top: 3px solid var(--accent); border-radius: 50%;
+            animation: spin 1.5s infinite ease-in-out;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE BIENVENIDA / SELECCIÓN DE IDIOMA -->
+    <div id="landing">
+        <h1>Acompañamiento Espiritual</h1>
+        <p>
+            Bienvenido a este espacio de reflexión pastoral.<br>
+            Este sistema utiliza inteligencia artificial para ofrecer una lectura espiritual,
+            serena y acogedora de sus inquietudes, basada en la tradición cristiana.
+        </p>
+        
+        <div>
+            <button class="lang-btn" onclick="enterApp('es')">Español</button>
+            <button class="lang-btn" onclick="enterApp('ca')">Català</button>
+        </div>
+
+        <div class="designer">
+            Diseñado por Angel A. Urbina 2026
+        </div>
+    </div>
+
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div class="container" id="app-container">
+        <h1 class="app-title" id="lbl-title">Acompañamiento</h1>
+        <div class="subtitle" id="lbl-subtitle">Espacio de escucha, discernimiento y paz</div>
+
+        <div class="form-card">
+            <form action="/analyze" method="post" enctype="multipart/form-data"
+                  onsubmit="document.getElementById('loader').style.display='flex'">
+                
+                <!-- Campo oculto para el idioma -->
+                <input type="hidden" name="lang" id="lang-input" value="es">
+
+                <label id="lbl-exp">Tu experiencia hoy</label>
+                <div class="hint" id="lbl-exp-hint">Comparte con sencillez lo que vives, sientes o buscas.</div>
+                
+                <div class="input-wrapper">
+                    <textarea id="experience-txt" name="experience" rows="6" required></textarea>
+                    <button type="button" class="mic-btn" onclick="toggleDictation('experience-txt', this)">
+                        <i class="ph-microphone-fill"></i>
+                    </button>
+                </div>
+                <div class="file-upload">
+                    <span id="lbl-file1">Adjuntar archivo</span> (PDF/DOCX/TXT): <input type="file" name="experience_file" accept=".pdf,.docx,.txt">
+                </div>
+
+                <label id="lbl-ctx">Contexto personal (Opcional)</label>
+                <div class="input-wrapper">
+                    <textarea id="context-txt" name="context" rows="3"></textarea>
+                    <button type="button" class="mic-btn" onclick="toggleDictation('context-txt', this)">
+                        <i class="ph-microphone-fill"></i>
+                    </button>
+                </div>
+                <div class="file-upload">
+                    <input type="file" name="context_file" accept=".pdf,.docx,.txt">
+                </div>
+
+                <button type="submit" class="submit-btn" id="lbl-btn">RECIBIR REFLEXIÓN</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div style="margin-top:20px; color:#8e7345; font-family:'Libre Baskerville'" id="lbl-loading">Discerniendo en silencio...</div>
+    </div>
+
+    <script>
+        // TRADUCCIONES
+        const i18n = {
+            es: {
+                title: "Acompañamiento",
+                subtitle: "Espacio de escucha, discernimiento y paz",
+                lblExp: "Tu experiencia hoy",
+                hintExp: "Comparte con sencillez lo que vives, sientes o buscas en este momento.",
+                phExp: "Escribe aquí...",
+                lblCtx: "Contexto personal (Opcional)",
+                phCtx: "Detalles adicionales...",
+                lblFile: "Adjuntar archivo",
+                btn: "RECIBIR REFLEXIÓN",
+                loading: "Discerniendo en silencio..."
+            },
+            ca: {
+                title: "Acompanyament",
+                subtitle: "Espai d'escolta, discerniment i pau",
+                lblExp: "La teva experiència avui",
+                hintExp: "Comparteix amb senzillesa allò que vius, sents o cerques en aquest moment.",
+                phExp: "Escriu aquí...",
+                lblCtx: "Context personal (Opcional)",
+                phCtx: "Detalls addicionals...",
+                lblFile: "Adjuntar fitxer",
+                btn: "REBRE REFLEXIÓ",
+                loading: "Discernint en silenci..."
+            }
+        };
+
+        function enterApp(lang) {
+            // Guardar idioma
+            document.getElementById('lang-input').value = lang;
+            
+            // Traducir interfaz
+            const t = i18n[lang];
+            document.getElementById('lbl-title').innerText = t.title;
+            document.getElementById('lbl-subtitle').innerText = t.subtitle;
+            document.getElementById('lbl-exp').innerText = t.lblExp;
+            document.getElementById('lbl-exp-hint').innerText = t.hintExp;
+            document.getElementById('experience-txt').placeholder = t.phExp;
+            document.getElementById('lbl-ctx').innerText = t.lblCtx;
+            document.getElementById('context-txt').placeholder = t.phCtx;
+            document.getElementById('lbl-file1').innerText = t.lblFile;
+            document.getElementById('lbl-btn').innerText = t.btn;
+            document.getElementById('lbl-loading').innerText = t.loading;
+
+            // Transición
+            document.getElementById('landing').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+
+            // Comprobar soporte de Audio
+            checkAudioSupport();
+        }
+
+        // LÓGICA DE AUDIO (Dictado)
+        let recognition = null;
+        let currentBtn = null;
+
+        function checkAudioSupport() {
+            // Verificar si el navegador soporta SpeechRecognition
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                // Ocultar botones de micrófono si no hay soporte
+                document.querySelectorAll('.mic-btn').forEach(btn => btn.style.display = 'none');
+            } else {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                // Ajustar idioma del reconocimiento según selección
+                const lang = document.getElementById('lang-input').value;
+                recognition.lang = lang === 'ca' ? 'ca-ES' : 'es-ES';
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    const targetId = currentBtn.getAttribute('data-target');
+                    const textarea = document.getElementById(targetId);
+                    if (textarea.value.length > 0) textarea.value += " " + transcript;
+                    else textarea.value = transcript;
+                    stopDictation();
+                };
+                recognition.onerror = function() { stopDictation(); };
+                recognition.onend = function() { stopDictation(); };
+            }
+        }
+
+        function toggleDictation(targetId, btn) {
+            if (!recognition) return;
+
+            if (btn.classList.contains('recording')) {
+                recognition.stop();
+            } else {
+                if (currentBtn && currentBtn !== btn) stopDictation();
+                currentBtn = btn;
+                currentBtn.setAttribute('data-target', targetId);
+                currentBtn.classList.add('recording');
+                try { recognition.start(); } catch(e) { console.error(e); stopDictation(); }
+            }
+        }
+
+        function stopDictation() {
+            if (currentBtn) {
+                currentBtn.classList.remove('recording');
+                currentBtn = null;
+            }
+            try { recognition.stop(); } catch(e){}
+        }
+    </script>
+</body>
+</html>
+
